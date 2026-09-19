@@ -1,15 +1,38 @@
 {
   "name": "herbstutil",
-  "version": "0.1.0",
-  "description": "A CLI built with Bunli",
-  "author": "",
+  "version": "0.1.1",
+  "description": "A utility to convert herbstclient attribute output into JSON. Perfect for programmatically interacting with the herbstluftwm tiling window manager.",
+  "author": "akinevz",
+  "license": "GPL-2.0-only",
+  "homepage": "https://github.com/akinevz/herbstutil",
   "bin": {
     "herbstutil": "./dist/index"
   },
   "type": "module",
+  "keywords": [
+    "herbstluftwm",
+    "window-manager",
+    "tiling",
+    "linux",
+    "utility",
+    "json",
+    "herbstclient",
+    "cli",
+    "bash",
+    "wm",
+    "configuration"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akinevz/herbstutil.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akinevz/herbstutil/issues"
+  },
   "scripts": {
     "postinstall": "bunli generate",
     "build": "bunli build",
+    "compile": "bun run build",
     "test": "bun test",
     "typecheck": "tsgo --noEmit"
   },

@@ -4,25 +4,24 @@
 import type { Command, CLI, GeneratedOptionMeta, RegisteredCommands, CommandOptions, GeneratedCommandMeta } from '@bunli/core'
 import { createGeneratedHelpers, registerGeneratedStore } from '@bunli/core'
 
-import Hello from '../src/commands/hello.js'
+import Parse from '../src/commands/parse.js'
 
 // Narrow list of command names to avoid typeof-cycles in types
-const names = ['hello'] as const
+const names = ['parse'] as const
 type GeneratedNames = typeof names[number]
 
 const modules: Record<GeneratedNames, Command<any>> = {
-  'hello': Hello
+  'parse': Parse
 } as const
 
 const metadata: Record<GeneratedNames, GeneratedCommandMeta> = {
-  'hello': {
-      name: 'hello',
-      description: 'Say hello to someone',
+  'parse': {
+      name: 'parse',
+      description: 'Parse herbstclient attr output into JSON',
       options: {
-        'name': { type: 'z.string.default', required: true, hasDefault: true, default: "World", description: 'Name to greet', short: 'n', schema: {"type":"zod","method":"default","args":[{"type":"literal","value":"World"}]}, validator: '(val) => true' },
-        'excited': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Add excitement!', short: 'e', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":335,"end":340,"loc":{"start":{"line":12,"column":40,"index":335},"end":{"line":12,"column":45,"index":340}},"value":false}}]}, validator: '(val) => true' }
+        'space': { type: 'z.number.default', required: true, hasDefault: true, default: 4, description: 'Indent the JSON.stringify output', short: 's', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":1611,"end":1612,"loc":{"start":{"line":66,"column":37,"index":1611},"end":{"line":66,"column":38,"index":1612}},"extra":{"rawValue":4,"raw":"4"},"value":4}}]}, validator: '(val) => true' }
       },
-      path: './src/commands/hello'
+      path: './src/commands/parse'
     }
 } as const
 
