@@ -1,0 +1,31 @@
+{
+  "name": "herbstutil",
+  "version": "0.1.0",
+  "description": "A CLI built with Bunli",
+  "author": "",
+  "bin": {
+    "herbstutil": "./dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "postinstall": "bunli generate",
+    "dev": "bun run src/index.ts",
+    "build": "bunli build",
+    "test": "bun test",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@bunli/core": "latest"
+  },
+  "devDependencies": {
+    "@bunli/test": "latest",
+    "@tsconfig/bun": "1.0.10",
+    "@types/bun": "latest",
+    "bunli": "latest",
+    "typescript": "^5.0.0"
+  },
+  "bunli": {
+    "entry": "./src/index.ts",
+    "outDir": "./dist"
+  }
+}
