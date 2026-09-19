@@ -3,7 +3,7 @@ import { defineConfig } from "@bunli/core";
 export default defineConfig({
   name: "herbstutil",
   version: "0.1.0",
-  description: "A CLI built with Bunli",
+  description: "A simple filter to parse herbstclient attr output into json",
 
   commands: {
     directory: "./src/commands",
@@ -16,11 +16,6 @@ export default defineConfig({
     minify: true,
     sourcemap: true,
     compress: false,
-  },
-
-  dev: {
-    watch: true,
-    inspect: true,
   },
 
   test: {

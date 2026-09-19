@@ -1,41 +1,5 @@
 # herbstutil
 
-A CLI built with Bunli
+Post-process `herbstclient attr` output into json.
 
-## Installation
-
-```bash
-bun install
-```
-
-## Development
-
-```bash
-bun dev -- [command]
-```
-
-## Building
-
-```bash
-bun run build
-```
-
-## Testing
-
-```bash
-bun test
-```
-
-## Usage
-
-```bash
-herbstutil hello --name World
-```
-
-## Commands
-
-- `hello` - A simple greeting command
-
-## License
-
-MIT
+Early release.

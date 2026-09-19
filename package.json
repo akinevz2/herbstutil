@@ -4,12 +4,11 @@
   "description": "A CLI built with Bunli",
   "author": "",
   "bin": {
-    "herbstutil": "./dist/index.js"
+    "herbstutil": "./dist/index"
   },
   "type": "module",
   "scripts": {
     "postinstall": "bunli generate",
-    "dev": "bun run src/index.ts",
     "build": "bunli build",
     "test": "bun test",
     "typecheck": "tsgo --noEmit"
