@@ -2,9 +2,10 @@
   "name": "herbstutil",
   "version": "0.1.1a",
   "description": "A utility to convert herbstclient attribute output into JSON. Perfect for programmatically interacting with the herbstluftwm tiling window manager.",
-  "author": "akinevz",
+  "author": "Kirill <kine> Nevzorov",
+  "email": "akinevz@outlook.com",
   "license": "GPL-2.0-only",
-  "homepage": "https://github.com/akinevz/herbstutil",
+  "homepage": "https://github.com/akinevz2/herbstutil",
   "bin": {
     "herbstutil": "./dist/index"
   },
