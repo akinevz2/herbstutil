@@ -4,22 +4,34 @@
 import type { Command, CLI, GeneratedOptionMeta, RegisteredCommands, CommandOptions, GeneratedCommandMeta } from '@bunli/core'
 import { createGeneratedHelpers, registerGeneratedStore } from '@bunli/core'
 
+import Attr from '../src/commands/attr.js'
 import Parse from '../src/commands/parse.js'
 
 // Narrow list of command names to avoid typeof-cycles in types
-const names = ['parse'] as const
+const names = ['attr', 'parse'] as const
 type GeneratedNames = typeof names[number]
 
 const modules: Record<GeneratedNames, Command<any>> = {
+  'attr': Attr,
   'parse': Parse
 } as const
 
 const metadata: Record<GeneratedNames, GeneratedCommandMeta> = {
+  'attr': {
+      name: 'attr',
+      description: 'Query herbstclient attr and parse its output into JSON',
+      options: {
+        'space': { type: 'z.coerce.number.default', required: true, hasDefault: true, default: 4, description: 'Indent the JSON.stringify output', short: 's', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":340,"end":341,"loc":{"start":{"line":12,"column":44,"index":340},"end":{"line":12,"column":45,"index":341}},"extra":{"rawValue":4,"raw":"4"},"value":4}}]}, validator: '(val) => true' },
+        'escape': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Print values exactly as herbstclient printed them (quotes stay escaped inside strings)', short: 'e', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":466,"end":471,"loc":{"start":{"line":16,"column":39,"index":466},"end":{"line":16,"column":44,"index":471}},"value":false}}]}, validator: '(val) => true' }
+      },
+      path: './src/commands/attr'
+    },
   'parse': {
       name: 'parse',
-      description: 'Parse herbstclient attr output into JSON',
+      description: 'Parse herbstclient attr output into JSON (default)',
       options: {
-        'space': { type: 'z.number.default', required: true, hasDefault: true, default: 4, description: 'Indent the JSON.stringify output', short: 's', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":1611,"end":1612,"loc":{"start":{"line":66,"column":37,"index":1611},"end":{"line":66,"column":38,"index":1612}},"extra":{"rawValue":4,"raw":"4"},"value":4}}]}, validator: '(val) => true' }
+        'space': { type: 'z.coerce.number.default', required: true, hasDefault: true, default: 4, description: 'Indent the JSON.stringify output', short: 's', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":4049,"end":4050,"loc":{"start":{"line":144,"column":44,"index":4049},"end":{"line":144,"column":45,"index":4050}},"extra":{"rawValue":4,"raw":"4"},"value":4}}]}, validator: '(val) => true' },
+        'escape': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Print values exactly as herbstclient printed them (quotes stay escaped inside strings)', short: 'e', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":4175,"end":4180,"loc":{"start":{"line":148,"column":39,"index":4175},"end":{"line":148,"column":44,"index":4180}},"value":false}}]}, validator: '(val) => true' }
       },
       path: './src/commands/parse'
     }
