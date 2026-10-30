@@ -15,16 +15,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-    modA,
-    modD,
-    modE,
-    modF,
-    modQ,
-    modS,
-    modShiftB,
+    getAdvice,
+    getDeck,
+    getDedeck,
+    getExplore,
+    getFocus,
+    getZoom,
+    getQuiet,
+    getSouth,
+    getBelow,
     modShiftW,
-    modW,
-    modX,
+    getForward,
+    getExtracted,
 } from "../src/commands/nav";
 
 const FIX = join(import.meta.dir, "fixtures", "mock-bin");
@@ -82,8 +84,8 @@ afterEach(() => {
 // verbatim from the keys.d fragments.
 describe("pure keybind chains", () => {
     // focus.sh $Mod-s
-    test("modS issues the zoom/peek grid chain", async () => {
-        await modS();
+    test("getSouth issues the zoom/peek grid chain", async () => {
+        await getSouth();
         expect(log()).toEqual([
             [
                 "chain", ":", "lock",
@@ -105,8 +107,8 @@ describe("pure keybind chains", () => {
     });
 
     // nav.sh $Mod-w
-    test("modW issues the leave-floating/ cycle-up chain", async () => {
-        await modW();
+    test("getForward issues the leave-floating/ cycle-up chain", async () => {
+        await getForward();
         expect(log()).toEqual([
             [
                 "chain", ":", "lock", ":", "or",
@@ -124,8 +126,8 @@ describe("pure keybind chains", () => {
     });
 
     // nav.sh $Mod-d
-    test("modD issues the count-gated layout cycler", async () => {
-        await modD();
+    test("getDeck issues the count-gated layout cycler", async () => {
+        await getDeck();
         expect(log()).toEqual([
             [
                 "or",
@@ -141,8 +143,8 @@ describe("pure keybind chains", () => {
     });
 
     // focus.sh $Mod-e
-    test("modE issues the cycle-backward/explode chain", async () => {
-        await modE();
+    test("getExplore issues the cycle-backward/explode chain", async () => {
+        await getExplore();
         expect(log()).toEqual([
             [
                 "or", ".",
@@ -153,8 +155,8 @@ describe("pure keybind chains", () => {
     });
 
     // autostart $Mod-a
-    test("modA issues the focus-left-or-split chain", async () => {
-        await modA();
+    test("getAdvice issues the focus-left-or-split chain", async () => {
+        await getAdvice();
         expect(log()).toEqual([
             ["or", ",", "focus", "left", "--level=frame", ",", "split", "left", "0.33333"],
         ]);
@@ -176,8 +178,8 @@ describe("pure keybind chains", () => {
     });
 
     // autostart $ModShift-b
-    test("modShiftB issues the split-bottom-and-shift chain", async () => {
-        await modShiftB();
+    test("getBelow issues the split-bottom-and-shift chain", async () => {
+        await getBelow();
         expect(log()).toEqual([
             [
                 "or", ".",
@@ -187,9 +189,23 @@ describe("pure keybind chains", () => {
         ]);
     });
 
+    // nav.sh $ModShift-d
+    test("getDedeck issues the count-gated mix-or-remove chain", async () => {
+        await getDedeck();
+        expect(log()).toEqual([
+            [
+                "or",
+                ".", "and",
+                ",", "compare", "tags.focus.curframe_wcount", "gt", "1",
+                ",", "cycle_layout", "+1", "max", "grid", "vertical",
+                ".", "remove",
+            ],
+        ]);
+    });
+
     // floating.sh $Mod-q
-    test("modQ issues the un-float-or-close chain", async () => {
-        await modQ();
+    test("getQuiet issues the un-float-or-close chain", async () => {
+        await getQuiet();
         expect(log()).toEqual([
             [
                 "chain", "!", "lock",
@@ -205,15 +221,15 @@ describe("pure keybind chains", () => {
     });
 });
 
-// modF — the hc_zoom press-state machine.
-describe("modF (hc_zoom port)", () => {
+// getZoom — the hc_zoom press-state machine.
+describe("getZoom (hc_zoom port)", () => {
     test("(a) tiled -> flag reset + hc_center root + hc_resize frame + hc_fit_to root, under lock", async () => {
         scenario([
             ["^attr clients\\.focus\\.winid$", "0", "0x1000001"],
             ["^attr clients\\.0x1000001\\.tag$", "0", "work"],
             ["^attr clients\\.0x1000001\\.floating$", "0", "false"],
         ]);
-        expect(await modF()).toBe(true);
+        expect(await getZoom()).toBe(true);
         expect(log()).toEqual([
             ["attr", "clients.focus.winid"],
             ["lock"],
@@ -234,7 +250,7 @@ describe("modF (hc_zoom port)", () => {
             ["^attr clients\\.0x1000001\\.tag$", "0", "work"],
             ["^attr clients\\.0x1000001\\.floating$", "0", "true"],
         ]);
-        expect(await modF()).toBe(true);
+        expect(await getZoom()).toBe(true);
         expect(log()).toEqual([
             ["attr", "clients.focus.winid"],
             ["lock"],
@@ -250,7 +266,7 @@ describe("modF (hc_zoom port)", () => {
             ["^attr clients\\.focus\\.winid$", "0", "0x1000001"],
             ["^attr clients\\.0x1000001\\.tag$", "0", "work-max"],
         ]);
-        expect(await modF()).toBe(true);
+        expect(await getZoom()).toBe(true);
         expect(log()).toEqual([
             ["attr", "clients.focus.winid"],
             ["lock"],
@@ -265,13 +281,13 @@ describe("modF (hc_zoom port)", () => {
 
     test("no focused window -> false, no lock taken (hc_zoom exits 1)", async () => {
         scenario([["^attr clients\\.focus\\.winid$", "1", ""]]);
-        expect(await modF()).toBe(false);
+        expect(await getZoom()).toBe(false);
         expect(log()).toEqual([["attr", "clients.focus.winid"]]);
     });
 });
 
-// modX — the hc_floatx layer-yank state machine.
-describe("modX (hc_floatx port)", () => {
+// getExtracted — the hc_floatx layer-yank state machine.
+describe("getExtracted (hc_floatx port)", () => {
     // The batched state read every branch starts with (chain + echo "|").
     const stateChain = (wcount: number, frameCc: number, frameCount: number, algo: string) =>
         [
@@ -301,7 +317,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
             ["^attr tags\\.focus\\.floating_focused on$", "0", ""],
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"], // orig
@@ -326,7 +342,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
             ["^attr tags\\.focus\\.floating_focused on$", "1", ""], // re-entry fails: no floats
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -351,7 +367,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr clients\\.0x1000004\\.minimized$", "0", "false"],
             ["^attr tags\\.focus\\.floating_focused$", "0", "true"],
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -375,7 +391,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr tags\\.focus\\.floating_focused$", "0", "true"],
             ["^attr clients\\.0x1000006\\.floating false$", "0", ""],
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -402,7 +418,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr tags\\.focus\\.floating_focused$", "0", "true"],
             ["^attr tags\\.focus\\.tiling\\.focused_frame\\.client_count$", "0", "0"],
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -430,7 +446,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr tags\\.focus\\.floating_focused on$", "1", ""],
             ["^attr tags\\.by-name\\.work\\.client_count$", "0", "3"],
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -456,7 +472,7 @@ describe("modX (hc_floatx port)", () => {
             ["^chain , attr clients\\.0x1000009\\.minimized$", "0", "true"], // has_minimized
             ["^chain , attr clients\\.0x1000009\\.minimized off$", "0", ""], // the reveal
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -483,7 +499,7 @@ describe("modX (hc_floatx port)", () => {
             ["^attr tags\\.focus\\.floating_focused on$", "1", ""],
             ["^attr tags\\.by-name\\.work\\.client_count$", "0", "0"],
         ]);
-        await modX();
+        await getExtracted();
         expect(log()).toEqual([
             ["lock"],
             ["attr", "clients.focus.winid"],
@@ -496,6 +512,207 @@ describe("modX (hc_floatx port)", () => {
             ["use_previous"],
             ["bring", "0x100000a"],
             ["unlock"],
+        ]);
+    });
+});
+
+// getFocus — the hc_focus float-register machine ($Mod-f). NO lock is
+// ever taken (hc_focus's header: the helpers own their locks).
+describe("getFocus (hc_focus port)", () => {
+    const UNFLOAT_CHAIN = (wid: string) => [
+        "chain",
+        ",", "attr", `clients.${wid}.fullscreen`, "off",
+        ",", "attr", `clients.${wid}.pseudotile`, "off",
+        ",", "attr", `clients.${wid}.floating`, "off",
+    ];
+
+    test("(c->e) tiling layer + layer-switch succeeds + EMPTY frame -> un-float the pre-scanned float (no jumpto, no lock)", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000001"],
+            ["^attr clients\\.0x2000001\\.floating$", "0", "true"],
+            ["^attr clients\\.0x2000001\\.minimized$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused on$", "0", ""],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.client_count$", "0", "0"],
+        ]);
+        await getFocus();
+        expect(log()).toEqual([
+            ["attr", "tags.focus.name"], // pre-scan
+            ["list_clients", "--tag=work"],
+            ["attr", "clients.0x2000001.floating"],
+            ["attr", "clients.0x2000001.minimized"],
+            ["attr", "tags.focus.floating_focused"], // ff read
+            ["attr", "tags.focus.floating_focused", "on"], // the try-focus
+            ["attr", "tags.focus.tiling.focused_frame.client_count"], // fcc == 0
+            UNFLOAT_CHAIN("0x2000001"), // no jumpto — already focused
+        ]);
+    });
+
+    test("(f) layer-switch succeeds + populated frame -> terminate, the float stays", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000001"],
+            ["^attr clients\\.0x2000001\\.floating$", "0", "true"],
+            ["^attr clients\\.0x2000001\\.minimized$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused on$", "0", ""],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.client_count$", "0", "2"],
+        ]);
+        await getFocus();
+        expect(log()).toEqual([
+            ["attr", "tags.focus.name"],
+            ["list_clients", "--tag=work"],
+            ["attr", "clients.0x2000001.floating"],
+            ["attr", "clients.0x2000001.minimized"],
+            ["attr", "tags.focus.floating_focused"],
+            ["attr", "tags.focus.floating_focused", "on"],
+            ["attr", "tags.focus.tiling.focused_frame.client_count"], // fcc > 0 -> stop
+        ]);
+    });
+
+    test("(g) switch fails + max layout -> flag chain, hc_center frame, vacated frame removed, hc_fit_to frame, algorithm max", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000003"],
+            ["^attr clients\\.0x2000003\\.floating$", "0", "false"], // no visible float
+            ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused on$", "1", ""], // re-entry fails
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.algorithm$", "0", "max"],
+            ["^attr clients\\.focus\\.winid$", "0", "0x2000003"],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.client_count$", "0", "0"],
+        ]);
+        await getFocus();
+        expect(log()).toEqual([
+            ["attr", "tags.focus.name"],
+            ["list_clients", "--tag=work"],
+            ["attr", "clients.0x2000003.floating"],
+            ["attr", "tags.focus.floating_focused"],
+            ["attr", "tags.focus.floating_focused", "on"], // fails
+            ["attr", "tags.focus.tiling.focused_frame.algorithm"], // algo == max
+            ["attr", "clients.focus.winid"],
+            ["chain", ",", "attr", "clients.0x2000003.fullscreen", "off",
+             ",", "attr", "clients.0x2000003.pseudotile", "off"],
+            [`${FIX}/hc_center`, "frame"],
+            ["attr", "tags.focus.tiling.focused_frame.client_count"], // vcc == 0
+            ["remove"], // Mod-f owns frame closing here
+            [`${FIX}/hc_fit_to`, "frame"],
+            ["attr", "tags.focus.tiling.focused_frame.algorithm", "max"], // the tail
+        ]);
+    });
+
+    test("(g) vacated frame still holds clients -> no remove", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000003"],
+            ["^attr clients\\.0x2000003\\.floating$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused on$", "1", ""],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.algorithm$", "0", "max"],
+            ["^attr clients\\.focus\\.winid$", "0", "0x2000003"],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.client_count$", "0", "1"],
+        ]);
+        await getFocus();
+        const entries = log();
+        expect(entries).not.toContainEqual(["remove"]);
+        expect(entries.slice(-4)).toEqual([
+            [`${FIX}/hc_center`, "frame"],
+            ["attr", "tags.focus.tiling.focused_frame.client_count"], // vcc == 1
+            [`${FIX}/hc_fit_to`, "frame"],
+            ["attr", "tags.focus.tiling.focused_frame.algorithm", "max"], // the tail
+        ]);
+    });
+
+    test("(g) non-max layout -> no lift, just the algorithm=max tail", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000004"],
+            ["^attr clients\\.0x2000004\\.floating$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused on$", "1", ""],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.algorithm$", "0", "grid"],
+        ]);
+        await getFocus();
+        expect(log()).toEqual([
+            ["attr", "tags.focus.name"],
+            ["list_clients", "--tag=work"],
+            ["attr", "clients.0x2000004.floating"],
+            ["attr", "tags.focus.floating_focused"],
+            ["attr", "tags.focus.floating_focused", "on"], // fails
+            ["attr", "tags.focus.tiling.focused_frame.algorithm"], // grid != max
+            ["attr", "tags.focus.tiling.focused_frame.algorithm", "max"], // tail only
+        ]);
+    });
+
+    test("(h) floating_focused TRUE -> direct un-float (NO hc_tile), client_count read unused", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000005"],
+            ["^attr clients\\.0x2000005\\.floating$", "0", "true"],
+            ["^attr clients\\.0x2000005\\.minimized$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused$", "0", "true"],
+            ["^attr clients\\.focus\\.winid$", "0", "0x2000006"],
+            ["^attr tags\\.focus\\.tiling\\.focused_frame\\.client_count$", "0", "1"],
+        ]);
+        await getFocus();
+        expect(log()).toEqual([
+            ["attr", "tags.focus.name"],
+            ["list_clients", "--tag=work"],
+            ["attr", "clients.0x2000005.floating"],
+            ["attr", "clients.0x2000005.minimized"],
+            ["attr", "tags.focus.floating_focused"],
+            ["attr", "clients.focus.winid"], // wid (fallback to float_wid)
+            ["attr", "tags.focus.tiling.focused_frame.client_count"], // read, unused
+            UNFLOAT_CHAIN("0x2000006"),
+        ]);
+    });
+
+    test("(h) no focused window and no visible float -> stop after the reads", async () => {
+        scenario([
+            ["^attr tags\\.focus\\.name$", "0", "work"],
+            ["^list_clients --tag=work$", "0", "0x2000007"],
+            ["^attr clients\\.0x2000007\\.floating$", "0", "false"],
+            ["^attr tags\\.focus\\.floating_focused$", "0", "true"],
+            ["^attr clients\\.focus\\.winid$", "1", ""],
+        ]);
+        await getFocus();
+        expect(log()).toEqual([
+            ["attr", "tags.focus.name"],
+            ["list_clients", "--tag=work"],
+            ["attr", "clients.0x2000007.floating"],
+            ["attr", "tags.focus.floating_focused"],
+            ["attr", "clients.focus.winid"], // empty -> no float_wid -> stop
+        ]);
+    });
+});
+
+// The deprecated mod-* CLI aliases: still work (same commands), with a
+// stderr deprecation note pointing at the new name.
+describe("deprecated mod-* aliases", () => {
+    test("mod-d alias dispatches the same chain and notes on stderr", async () => {
+        const { navCommands } = await import("../src/commands/nav");
+        const alias = navCommands.find((c) => c.name === "mod-d")!;
+        expect(alias).toBeDefined();
+        const errs: string[] = [];
+        const origErr = console.error;
+        console.error = (msg?: unknown) => errs.push(String(msg));
+        try {
+            await (alias as unknown as { handler: (i: never) => Promise<void> }).handler(undefined as never);
+        } finally {
+            console.error = origErr;
+        }
+        expect(errs.some((e) => e.includes("mod-d is deprecated") && e.includes("get-deck"))).toBe(true);
+        expect(log()).toEqual([
+            [
+                "or",
+                ",", "and",
+                ".", "compare", "tags.focus.curframe_wcount", "gt", "3",
+                ".", "cycle_layout", "+1", "max", "vertical", "grid", "horizontal",
+                ",", "and",
+                ".", "compare", "tags.focus.curframe_wcount", "=", "2",
+                ".", "cycle_layout", "+1", "vertical", "max", "horizontal",
+                ",", "cycle_layout", "-1", "vertical", "horizontal", "max",
+            ],
         ]);
     });
 });

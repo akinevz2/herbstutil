@@ -98,7 +98,7 @@ async function listClientsByTag(tag: string): Promise<string[]> {
  *  focuses the floating layer AND fails through when it is empty), the
  *  cycle fallbacks and the pseudotile toggle. One chained spawn, held
  *  under lock. */
-export async function modS(): Promise<void> {
+export async function getSouth(): Promise<void> {
     await hc(
         "chain", ":", "lock",
         ":", "or",
@@ -119,7 +119,7 @@ export async function modS(): Promise<void> {
 
 /** $Mod-e (focus.sh): with >1 frame cycle backwards, else explode the
  *  frame and cycle forward. */
-export async function modE(): Promise<void> {
+export async function getExplore(): Promise<void> {
     await hc(
         "or", ".",
         "and", ",", "compare", "tags.focus.frame_count", "gt", "1", ",", "cycle_frame", "-1",
@@ -129,7 +129,7 @@ export async function modE(): Promise<void> {
 
 /** $Mod-w (nav.sh): leave the floating layer, then cycle window/frame
  *  upward — focus --level=frame up, cycle_frame. */
-export async function modW(): Promise<void> {
+export async function getForward(): Promise<void> {
     await hc(
         "chain", ":", "lock", ":", "or",
         ",", "and",
@@ -146,7 +146,7 @@ export async function modW(): Promise<void> {
 
 /** $Mod-d (nav.sh): the layout cycler — count-gated cycle_layout mixes
  *  (4+ windows, exactly 2) with a bare -1 rotation fallback. */
-export async function modD(): Promise<void> {
+export async function getDeck(): Promise<void> {
     await hc(
         "or",
         ",", "and",
@@ -161,7 +161,7 @@ export async function modD(): Promise<void> {
 
 /** $Mod-a (autostart): focus the frame to the left, or split one off
  *  at a third of the width when there is nothing to focus. */
-export async function modA(): Promise<void> {
+export async function getAdvice(): Promise<void> {
     await hc(
         "or",
         ",", "focus", "left", "--level=frame",
@@ -185,7 +185,7 @@ export async function modShiftW(): Promise<void> {
 
 /** $ModShift-b (autostart): with >1 window in the focused frame, split
  *  a bottom frame and shift the window down into it. */
-export async function modShiftB(): Promise<void> {
+export async function getBelow(): Promise<void> {
     await hc(
         "or", ".",
         "and", ",", "compare", "tags.focus.curframe_wcount", "gt", "1",
@@ -193,10 +193,23 @@ export async function modShiftB(): Promise<void> {
     );
 }
 
+/** $ModShift-d (nav.sh): with >1 window in the focused frame mix in
+ *  the max/grid/vertical layouts, otherwise remove the focused frame
+ *  (the shift-complement of $Mod-d's cycler). */
+export async function getDedeck(): Promise<void> {
+    await hc(
+        "or",
+        ".", "and",
+        ",", "compare", "tags.focus.curframe_wcount", "gt", "1",
+        ",", "cycle_layout", "+1", "max", "grid", "vertical",
+        ".", "remove",
+    );
+}
+
 /** $Mod-q (floating.sh): a focused float is ONLY un-floated; tiling
  *  windows get closed, with a lone-window frame removed afterwards
  *  (close_and_remove / close_or_remove). Under lock. */
-export async function modQ(): Promise<void> {
+export async function getQuiet(): Promise<void> {
     await hc(
         "chain", "!", "lock",
         "!", "or",
@@ -273,7 +286,7 @@ export async function removeEmptyFrame(): Promise<void> {
 }
 
 /**
- * modF — hc_zoom, the three-state press machine for the focused
+ * getZoom — hc_zoom, the three-state press machine for the focused
  * window (bound as $ModCtrl-f in dots; the hc_zoom press register):
  *   press 1  tiled      -> float it, stretched to fill the frame
  *   press 2  floating   -> maximize onto a dedicated <tag>-max tag
@@ -290,7 +303,7 @@ export async function removeEmptyFrame(): Promise<void> {
  * Resolves false when there is no focused window (hc_zoom exits 1);
  * the CLI subcommand maps that to exit code 1.
  */
-export async function modF(): Promise<boolean> {
+export async function getZoom(): Promise<boolean> {
     const wid = await attrRaw("clients.focus.winid");
     if (!wid) {
         console.error("mod-f: no focused window");
@@ -333,7 +346,7 @@ export async function modF(): Promise<boolean> {
 }
 
 /**
- * modX — hc_floatx, the layer-focus toggle / yanker (all branches,
+ * getExtracted — hc_floatx, the layer-focus toggle / yanker (all branches,
  * faithfully):
  *
  *   floating_focused FALSE (tiling layer owns focus):
@@ -368,7 +381,7 @@ export async function modF(): Promise<boolean> {
  * tracks the register on un-float (the defensive write raced with it).
  * Standalone register writes (defer, re-entry failure) remain.
  */
-export async function modX(): Promise<void> {
+export async function getExtracted(): Promise<void> {
     await hc("lock");
     try {
         const orig = await attrRaw("clients.focus.winid");
@@ -531,11 +544,127 @@ export async function modX(): Promise<void> {
     }
 }
 
+/**
+ * getFocus — hc_focus, the float-register machine (the $Mod-f key —
+ * distinct from getZoom, which is hc_zoom on $ModCtrl-f):
+ *
+ *   Pre-scan the first VISIBLE float on the tag (the only candidate
+ *   the floating layer can focus; a fallback for the focus read that
+ *   may lag right after the layer switch).
+ *
+ *   floating_focused FALSE:
+ *     TRY the layer switch (floating_focused on; fails when no
+ *     non-minimized float exists).
+ *     Success -> the float it focused STAYS floating when the focused
+ *     frame holds children (no stacking); an EMPTY frame -> UN-FLOAT
+ *     the float into it (the register chain: fullscreen/pseudotile/
+ *     floating off — NO jumpto, the window is already focused; NO
+ *     floating_focused write — hlwm tracks the register on un-float).
+ *     Failure -> float the current window, but ONLY when the focused
+ *     frame's layout algorithm is "max": flags off, hc_center frame
+ *     (the size-keeping lift), close the vacated frame when it reads
+ *     zero clients (`remove` — Mod-f owns frame closing on this path),
+ *     hc_fit_to frame. Afterwards the focused frame is set to the max
+ *     algorithm regardless (the script's unconditional tail).
+ *
+ *   floating_focused TRUE (a float has focus): DIRECT un-float — no
+ *   hc_tile (that is Mod-x's register; the window re-tiles into the
+ *   frame below whatever it holds). The frame's client_count is read
+ *   first and unused — the script does exactly that.
+ *
+ *   NO script-level lock: the helpers take their own
+ *   reference-counted WM locks (hc_focus's header).
+ */
+export async function getFocus(): Promise<void> {
+    const tag = await attrRaw("tags.focus.name");
+
+    // Pre-scan the first visible (non-minimized) float on the tag.
+    let floatWid = "";
+    if (tag) {
+        for (const c of await listClientsByTag(tag)) {
+            const floating = (await attrRaw(`clients.${c}.floating`)) || "false";
+            if (floating === "true") {
+                const minimized = (await attrRaw(`clients.${c}.minimized`)) || "false";
+                if (minimized === "false") {
+                    floatWid = c;
+                    break;
+                }
+            }
+        }
+    }
+
+    const ff = (await attrRaw("tags.focus.floating_focused")) || "false";
+
+    if (ff !== "true") {
+        // a) false; b) try the layer switch.
+        if ((await hc("attr", "tags.focus.floating_focused", "on")) !== null) {
+            // c) switch succeeded. The PRE-SCANNED float wid is PRIMARY —
+            // clients.focus may lag a settle-tick after the switch.
+            const fcc = (await attrRaw("tags.focus.tiling.focused_frame.client_count")) || "0";
+            const wid = floatWid || (await attrRaw("clients.focus.winid"));
+            if (fcc === "0") {
+                // e) un-float the float into the empty frame (no jumpto —
+                // it is already focused; no register write — hlwm tracks
+                // it on un-float).
+                await hc(
+                    "chain",
+                    ",", "attr", `clients.${wid}.fullscreen`, "off",
+                    ",", "attr", `clients.${wid}.pseudotile`, "off",
+                    ",", "attr", `clients.${wid}.floating`, "off",
+                );
+            }
+            // f) otherwise: terminate — the float stays floating, the
+            // floating layer holds focus (no stacking).
+            return;
+        }
+
+        // g) the switch failed (no float to focus): float the current
+        // window — but ONLY in the max layout.
+        const algo = await attrRaw("tags.focus.tiling.focused_frame.algorithm");
+        if (algo === "max") {
+            const wid = await attrRaw("clients.focus.winid");
+            if (wid) {
+                await hc(
+                    "chain",
+                    ",", "attr", `clients.${wid}.fullscreen`, "off",
+                    ",", "attr", `clients.${wid}.pseudotile`, "off",
+                );
+                await helper("hc_center", ["frame"]);
+                // The lifted window vacated its tile — when the focused
+                // frame reads zero clients now, close it (Mod-f's
+                // register; removes the split).
+                const vcc = (await attrRaw("tags.focus.tiling.focused_frame.client_count")) || "1";
+                if (vcc === "0") {
+                    await hc("remove");
+                }
+                await helper("hc_fit_to", ["frame"]);
+            }
+        }
+        await hc("attr", "tags.focus.tiling.focused_frame.algorithm", "max");
+        return;
+    }
+
+    // h) floating_focused TRUE: a floating window has focus. Direct
+    // un-float — NO hc_tile (Mod-x's register).
+    let wid = await attrRaw("clients.focus.winid");
+    if (!wid) wid = floatWid;
+    if (!wid) return;
+    await attrRaw("tags.focus.tiling.focused_frame.client_count");
+    await hc(
+        "chain",
+        ",", "attr", `clients.${wid}.fullscreen`, "off",
+        ",", "attr", `clients.${wid}.pseudotile`, "off",
+        ",", "attr", `clients.${wid}.floating`, "off",
+    );
+}
+
 // ---------------------------------------------------------------------------
-// CLI subcommands — herbstutil mod-s | mod-w | mod-d | mod-e | mod-a |
-// mod-shift-w | mod-shift-b | mod-q | mod-f | mod-x — so dots keybinds
-// can call them directly (spawn herbstutil mod-s ... in place of the
-// inline chains).
+// CLI subcommands — herbstutil get-south | get-forward | get-deck |
+// get-explore | get-advice | get-shift-w | get-below | get-quiet |
+// get-zoom | get-extracted | get-dedeck | get-focus — so dots keybinds
+// can call them directly. The old mod-* names remain as deprecated
+// aliases (they still work; a note is printed on stderr) until the
+// dots keybinds are re-pointed.
 // ---------------------------------------------------------------------------
 
 function navCommand(name: string, description: string, run: () => Promise<boolean | void>) {
@@ -549,15 +678,35 @@ function navCommand(name: string, description: string, run: () => Promise<boolea
     });
 }
 
+/** Deprecated mod-* alias: same behavior, stderr note, exit codes kept. */
+function deprecatedCommand(alias: string, replacement: string, run: () => Promise<boolean | void>) {
+    return navCommand(alias, `(deprecated) use ${replacement}`, async () => {
+        console.error(`herbstutil ${alias} is deprecated — use herbstutil ${replacement}`);
+        return await run();
+    });
+}
+
 export const navCommands = [
-    navCommand("mod-s", "Zoom/peek grid: urgent jumpto, frame-down focus, float-layer un-float, cycle/pseudotile fallbacks", modS),
-    navCommand("mod-w", "Leave the floating layer and cycle window/frame upward", modW),
-    navCommand("mod-d", "Count-gated layout cycling (cycle_layout mixes, -1 fallback)", modD),
-    navCommand("mod-e", "Cycle frames backward, or explode when it is the last split", modE),
-    navCommand("mod-a", "Focus the frame left, or split one off at 1/3 width", modA),
-    navCommand("mod-shift-w", "Shift window up / cycle -1 / cycle+rotate frames", modShiftW),
-    navCommand("mod-shift-b", "Split a bottom frame and shift the window down into it", modShiftB),
-    navCommand("mod-q", "Un-float a focused float, else close (lone-window frames removed)", modQ),
-    navCommand("mod-f", "hc_zoom three-state toggle: float (frame fill) -> <tag>-max maximize -> restore", modF),
-    navCommand("mod-x", "hc_floatx layer-yank state machine: focus-a-float-then-unfloat / yank / defer / slurp / tidying", modX),
+    navCommand("get-south", "[$Mod-s] Zoom/peek grid: urgent jumpto, frame-down focus, float-layer un-float, cycle/pseudotile fallbacks", getSouth),
+    navCommand("get-forward", "[$Mod-w] Leave the floating layer and cycle window/frame upward", getForward),
+    navCommand("get-deck", "[$Mod-d] Count-gated layout cycling (cycle_layout mixes, -1 fallback)", getDeck),
+    navCommand("get-explore", "[$Mod-e] Cycle frames backward, or explode when it is the last split", getExplore),
+    navCommand("get-advice", "[$Mod-a] Focus the frame left, or split one off at 1/3 width", getAdvice),
+    navCommand("mod-shift-w", "[$ModShift-w] Shift window up / cycle -1 / cycle+rotate frames (not yet renamed)", modShiftW),
+    navCommand("get-below", "[$ModShift-b] Split a bottom frame and shift the window down into it", getBelow),
+    navCommand("get-quiet", "[$Mod-q] Un-float a focused float, else close (lone-window frames removed)", getQuiet),
+    navCommand("get-zoom", "[hc_zoom, $ModCtrl-f] Three-state toggle: float (frame fill) -> <tag>-max maximize -> restore", getZoom),
+    navCommand("get-extracted", "[hc_floatx, $Mod-x] Layer-yank state machine: focus-a-float-then-unfloat / yank / defer / slurp / tidying", getExtracted),
+    navCommand("get-dedeck", "[$ModShift-d] Count-gated layout mix, else remove the focused frame", getDedeck),
+    navCommand("get-focus", "[hc_focus, $Mod-f] Float-register machine: focus-a-float-and-unfloat / max-layout lift / direct un-float", getFocus),
+    // Deprecated aliases (old scheme) — still work.
+    deprecatedCommand("mod-s", "get-south", getSouth),
+    deprecatedCommand("mod-w", "get-forward", getForward),
+    deprecatedCommand("mod-d", "get-deck", getDeck),
+    deprecatedCommand("mod-e", "get-explore", getExplore),
+    deprecatedCommand("mod-a", "get-advice", getAdvice),
+    deprecatedCommand("mod-shift-b", "get-below", getBelow),
+    deprecatedCommand("mod-q", "get-quiet", getQuiet),
+    deprecatedCommand("mod-f", "get-zoom", getZoom),
+    deprecatedCommand("mod-x", "get-extracted", getExtracted),
 ];

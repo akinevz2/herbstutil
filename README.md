@@ -15,7 +15,7 @@ Early release.
 ```bash
 herbstutil parse [options]      # read herbstclient attr output from stdin, print json
 herbstutil attr [args...]       # run `herbstclient attr <args>` and print its parsed json
-herbstutil mod-<key>            # the dots keybind chains + float state machines (see below)
+herbstutil get-<name>           # the dots keybind chains + float state machines (see below)
 ```
 
 Options (both commands):
@@ -205,24 +205,30 @@ string herbstclient printed.
 The dots keybinds and float keybind state machines, as importable
 functions and CLI subcommands. Each function issues the SAME hlwm
 chains the source binding expresses, token for token (ports of the
-`herbst_focus`/`herbstluftwm` keys.d fragments and the
-`hc_zoom`/`hc_floatx` state machines — they live in
+herbstluftwm package's keys.d fragments and the
+`hc_zoom`/`hc_floatx`/`hc_focus` state machines — they live in
 [doftiles](https://github.com/akinevz2/doftiles)). Fail-soft
 throughout: a failed `herbstclient` call (missing object, vanished
 window) resolves null instead of throwing.
 
-| subcommand / function | binding | behavior |
-|-----------------------|---------|----------|
-| `mod-s` / `modS()` | `$Mod-s` | the zoom/peek grid: urgent jumpto, `focus --level=frame down`, the floating-layer branch (`attr tags.focus.floating_focused true` — focuses the float layer AND fails through when it is empty), cycle fallbacks, pseudotile toggle — one chained spawn under lock |
-| `mod-w` / `modW()` | `$Mod-w` | leave the floating layer, then cycle window/frame upward — under lock |
-| `mod-d` / `modD()` | `$Mod-d` | count-gated `cycle_layout` mixes with a bare `-1` fallback |
-| `mod-e` / `modE()` | `$Mod-e` | cycle frames backward, or `split explode` when it is the last split |
-| `mod-a` / `modA()` | `$Mod-a` | `focus left --level=frame`, or `split left 0.33333` |
-| `mod-shift-w` / `modShiftW()` | `$ModShift-w` | `shift --level=all up`, else cycle `-1` / cycle+rotate frames |
-| `mod-shift-b` / `modShiftB()` | `$ModShift-b` | with >1 window in the frame: `split bottom` + `shift down` |
-| `mod-q` / `modQ()` | `$Mod-q` | un-float a focused float, else close (lone-window frames removed, `close_or_remove`) — under lock |
-| `mod-f` / `modF()` | hc_zoom (bound `$ModCtrl-f` in dots) | the three-state press machine: tiled -> float (flag reset + center + deco-flush frame fill + fit) / floating -> maximize onto `<tag>-max` / maximized -> restore. The `-max` check runs BEFORE the floating check; PF_MAX state is owned by the delegated `hc_maximize`/`hc_unmaximize` helpers (and their daemon) |
-| `mod-x` / `modX()` | hc_floatx (`$Mod-x`) | the layer-yank machine: focus-a-float-then-unfloat / yank (float + center into the float session, frame left alone) / defer / un-float-into-empty-frame / tidying (remove, reveal, `polyframes hidden`, `use_previous`) |
+| subcommand / function | serves (hlwm keybind / script) | behavior |
+|-----------------------|--------------------------------|----------|
+| `get-south` / `getSouth()` | `$Mod-s` (zoom/peek grid) | urgent jumpto, `focus --level=frame down`, the floating-layer branch (`attr tags.focus.floating_focused true` — focuses the float layer AND fails through when it is empty), cycle fallbacks, pseudotile toggle — one chained spawn under lock |
+| `get-forward` / `getForward()` | `$Mod-w` | leave the floating layer, then cycle window/frame upward — under lock |
+| `get-deck` / `getDeck()` | `$Mod-d` | count-gated `cycle_layout` mixes with a bare `-1` fallback |
+| `get-dedeck` / `getDedeck()` | `$ModShift-d` | with >1 window in the frame mix in the max/grid/vertical layouts, else remove the focused frame |
+| `get-explore` / `getExplore()` | `$Mod-e` | cycle frames backward, or `split explode` when it is the last split |
+| `get-advice` / `getAdvice()` | `$Mod-a` | `focus left --level=frame`, or `split left 0.33333` |
+| `mod-shift-w` / `modShiftW()` | `$ModShift-w` | `shift --level=all up`, else cycle `-1` / cycle+rotate frames (not yet renamed) |
+| `get-below` / `getBelow()` | `$ModShift-b` | with >1 window in the frame: `split bottom` + `shift down` |
+| `get-quiet` / `getQuiet()` | `$Mod-q` | un-float a focused float, else close (lone-window frames removed, `close_or_remove`) — under lock |
+| `get-zoom` / `getZoom()` | `hc_zoom`, bound **$ModCtrl-f** | the three-state press machine: tiled -> float (flag reset + center + deco-flush frame fill + fit) / floating -> maximize onto `<tag>-max` / maximized -> restore. The `-max` check runs BEFORE the floating check; PF_MAX state is owned by the delegated `hc_maximize`/`hc_unmaximize` helpers (and their daemon) |
+| `get-extracted` / `getExtracted()` | `hc_floatx`, `$Mod-x` | the layer-yank machine: focus-a-float-then-unfloat / yank (float + center into the float session, frame left alone) / defer / un-float-into-empty-frame / tidying (remove, reveal, `polyframes hidden`, `use_previous`) |
+| `get-focus` / `getFocus()` | `hc_focus`, `$Mod-f` | the float-register machine: try focusing a float (un-float it into an EMPTY focused frame; with children the float stays, no stacking) / no floats + max layout -> the size-keeping lift (`hc_center frame` + vacated-frame `remove` + `hc_fit_to frame`, then the `algorithm=max` tail) / a focused float -> DIRECT un-float (no hc_tile). No script-level lock |
+
+The old `mod-s`, `mod-w`, `mod-d`, `mod-e`, `mod-a`, `mod-shift-b`,
+`mod-q`, `mod-f`, `mod-x` CLI names remain as deprecated aliases (same
+behavior, a note on stderr) until the dots keybinds are re-pointed.
 
 Small imperatives (also importable, shared with polyframes):
 
@@ -238,7 +244,7 @@ Small imperatives (also importable, shared with polyframes):
 
 ```ts
 import { parseAttr } from "herbstutil/src/commands/parse.js";
-import { modS, unfloatWid, floatCenterFrame } from "herbstutil/src/commands/nav.js";
+import { getSouth, getFocus, unfloatWid, floatCenterFrame } from "herbstutil/src/commands/nav.js";
 ```
 
 The state machines delegate to the dots helper binaries exactly where
@@ -248,7 +254,7 @@ the scripts do — `hc_center`, `hc_resize`, `hc_fit_to`, `hc_tile`,
 at a fixture dir) with:
 
 ```bash
-HERBSTUTIL_HELPER_DIR=/path/to/bin herbstutil mod-x
+HERBSTUTIL_HELPER_DIR=/path/to/bin herbstutil get-extracted
 ```
 
 Every subcommand/function is verified against the recorded argv of a
