@@ -1,6 +1,6 @@
 {
   "name": "herbstutil",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A simple filter to print herbstclient attr output in machine-readable format.",
   "author": "Kirill <kine> Nevzorov",
   "email": "akinevz@outlook.com",
@@ -9,6 +9,15 @@
   "bin": {
     "herbstutil": "./dist/index"
   },
+  "files": [
+    "src/",
+    "tests/",
+    "LICENSE",
+    "README.md",
+    "tsconfig.json",
+    "bunli.config.ts",
+    ".bunli/"
+  ],
   "type": "module",
   "keywords": [
     "herbstluftwm",

@@ -15,6 +15,7 @@ Early release.
 ```bash
 herbstutil parse [options]      # read herbstclient attr output from stdin, print json
 herbstutil attr [args...]       # run `herbstclient attr <args>` and print its parsed json
+herbstutil mod-<key>            # the dots keybind chains + float state machines (see below)
 ```
 
 Options (both commands):
@@ -198,3 +199,58 @@ integers and decimals become numbers, everything else stays a string.
 
 Pass `--escape` to skip all conversion and keep every value as the literal
 string herbstclient printed.
+
+# Keybind chains — `src/commands/nav.ts` (v0.2.0)
+
+The dots keybinds and float keybind state machines, as importable
+functions and CLI subcommands. Each function issues the SAME hlwm
+chains the source binding expresses, token for token (ports of the
+`herbst_focus`/`herbstluftwm` keys.d fragments and the
+`hc_zoom`/`hc_floatx` state machines — they live in
+[doftiles](https://github.com/akinevz2/doftiles)). Fail-soft
+throughout: a failed `herbstclient` call (missing object, vanished
+window) resolves null instead of throwing.
+
+| subcommand / function | binding | behavior |
+|-----------------------|---------|----------|
+| `mod-s` / `modS()` | `$Mod-s` | the zoom/peek grid: urgent jumpto, `focus --level=frame down`, the floating-layer branch (`attr tags.focus.floating_focused true` — focuses the float layer AND fails through when it is empty), cycle fallbacks, pseudotile toggle — one chained spawn under lock |
+| `mod-w` / `modW()` | `$Mod-w` | leave the floating layer, then cycle window/frame upward — under lock |
+| `mod-d` / `modD()` | `$Mod-d` | count-gated `cycle_layout` mixes with a bare `-1` fallback |
+| `mod-e` / `modE()` | `$Mod-e` | cycle frames backward, or `split explode` when it is the last split |
+| `mod-a` / `modA()` | `$Mod-a` | `focus left --level=frame`, or `split left 0.33333` |
+| `mod-shift-w` / `modShiftW()` | `$ModShift-w` | `shift --level=all up`, else cycle `-1` / cycle+rotate frames |
+| `mod-shift-b` / `modShiftB()` | `$ModShift-b` | with >1 window in the frame: `split bottom` + `shift down` |
+| `mod-q` / `modQ()` | `$Mod-q` | un-float a focused float, else close (lone-window frames removed, `close_or_remove`) — under lock |
+| `mod-f` / `modF()` | hc_zoom (bound `$ModCtrl-f` in dots) | the three-state press machine: tiled -> float (flag reset + center + deco-flush frame fill + fit) / floating -> maximize onto `<tag>-max` / maximized -> restore. The `-max` check runs BEFORE the floating check; PF_MAX state is owned by the delegated `hc_maximize`/`hc_unmaximize` helpers (and their daemon) |
+| `mod-x` / `modX()` | hc_floatx (`$Mod-x`) | the layer-yank machine: focus-a-float-then-unfloat / yank (float + center into the float session, frame left alone) / defer / un-float-into-empty-frame / tidying (remove, reveal, `polyframes hidden`, `use_previous`) |
+
+Small imperatives (also importable, shared with polyframes):
+
+- `unfloatWid(wid)` — fold fullscreen/pseudotile/floating flags off a
+  float and `jumpto` it (hc_floatx's `unfloat_wid`).
+- `floatCenterFrame(wid)` — float a window and center it within the
+  focused frame's content geometry, under a lock (the scroll wheel's
+  float step).
+- `minimizeKeepFrame(wid)` — minimize while deliberately keeping the
+  frame (the scroll wheel's tiled step down).
+- `removeEmptyFrame()` — prune the focused frame when the tag has more
+  than one frame and the focused one holds zero clients.
+
+```ts
+import { parseAttr } from "herbstutil/src/commands/parse.js";
+import { modS, unfloatWid, floatCenterFrame } from "herbstutil/src/commands/nav.js";
+```
+
+The state machines delegate to the dots helper binaries exactly where
+the scripts do — `hc_center`, `hc_resize`, `hc_fit_to`, `hc_tile`,
+`hc_maximize`, `hc_unmaximize` and `polyframes` — resolved from
+`$HOME/.local/bin` by default. Override the directory (tests point it
+at a fixture dir) with:
+
+```bash
+HERBSTUTIL_HELPER_DIR=/path/to/bin herbstutil mod-x
+```
+
+Every subcommand/function is verified against the recorded argv of a
+mocked `herbstclient` binary (`bun test`) — nothing here needs a live
+WM to test.

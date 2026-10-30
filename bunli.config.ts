@@ -2,7 +2,7 @@ import { defineConfig } from "@bunli/core";
 
 export default defineConfig({
   name: "herbstutil",
-  version: "0.1.0",
+  version: "0.2.0",
   description: "A simple filter to parse herbstclient attr output into json",
 
   commands: {
