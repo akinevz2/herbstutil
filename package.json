@@ -44,7 +44,10 @@
     "build": "bunli build",
     "compile": "bun run build",
     "test": "bun test",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "completion:install": "bun scripts/completion.ts install",
+    "completion:uninstall": "bun scripts/completion.ts uninstall",
+    "completion:print": "bun scripts/completion.ts print"
   },
   "dependencies": {
     "@bunli/core": "latest"

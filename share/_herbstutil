@@ -1,0 +1,8 @@
+#compdef herbstutil
+# zsh completion for herbstutil
+
+# mirrors share/_herbstclient (hlwm): the candidate generation lives in
+# the binary (herbstutil complete-shell), this file only delegates.
+
+# compadd is documented in zshcompwid(1)
+compadd -QS '' -- "$@" ${(f)"$(herbstutil complete-shell "$((CURRENT-2))" "${(@)words[@]:1}")"}
