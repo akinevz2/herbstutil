@@ -15,7 +15,6 @@ Early release.
 ```bash
 herbstutil parse [options]      # read herbstclient attr output from stdin, print json
 herbstutil attr [args...]       # run `herbstclient attr <args>` and print its parsed json
-herbstutil get-<name>           # the dots keybind chains + float state machines (see below)
 ```
 
 Options (both commands):
@@ -177,6 +176,14 @@ Leaf nodes:
 }
 ```
 
+# Scope
+
+herbstutil is deliberately PURE: a herbstclient-attr compatibility layer
+(parse + attr helpers — no opinions, no composite commands). The
+imperative compositions (the dots keybind chains and the float keybind
+state machines) live in their own project:
+[herbstctl](https://github.com/akinevz2/herbctl).
+
 # Value typing
 
 In the attribute listing, herbstclient annotates every attribute with a type
@@ -200,63 +207,16 @@ integers and decimals become numbers, everything else stays a string.
 Pass `--escape` to skip all conversion and keep every value as the literal
 string herbstclient printed.
 
-# Keybind chains — `src/commands/nav.ts` (v0.2.0)
+# Library
 
-The dots keybinds and float keybind state machines, as importable
-functions and CLI subcommands. Each function issues the SAME hlwm
-chains the source binding expresses, token for token (ports of the
-herbstluftwm package's keys.d fragments and the
-`hc_zoom`/`hc_floatx`/`hc_focus` state machines — they live in
-[doftiles](https://github.com/akinevz2/doftiles)). Fail-soft
-throughout: a failed `herbstclient` call (missing object, vanished
-window) resolves null instead of throwing.
-
-| subcommand / function | serves (hlwm keybind / script) | behavior |
-|-----------------------|--------------------------------|----------|
-| `get-south` / `getSouth()` | `$Mod-s` (zoom/peek grid) | urgent jumpto, `focus --level=frame down`, the floating-layer branch (`attr tags.focus.floating_focused true` — focuses the float layer AND fails through when it is empty), cycle fallbacks, pseudotile toggle — one chained spawn under lock |
-| `get-forward` / `getForward()` | `$Mod-w` | leave the floating layer, then cycle window/frame upward — under lock |
-| `get-deck` / `getDeck()` | `$Mod-d` | count-gated `cycle_layout` mixes with a bare `-1` fallback |
-| `get-dedeck` / `getDedeck()` | `$ModShift-d` | with >1 window in the frame mix in the max/grid/vertical layouts, else remove the focused frame |
-| `get-explore` / `getExplore()` | `$Mod-e` | cycle frames backward, or `split explode` when it is the last split |
-| `get-advice` / `getAdvice()` | `$Mod-a` | `focus left --level=frame`, or `split left 0.33333` |
-| `mod-shift-w` / `modShiftW()` | `$ModShift-w` | `shift --level=all up`, else cycle `-1` / cycle+rotate frames (not yet renamed) |
-| `get-below` / `getBelow()` | `$ModShift-b` | with >1 window in the frame: `split bottom` + `shift down` |
-| `get-quiet` / `getQuiet()` | `$Mod-q` | un-float a focused float, else close (lone-window frames removed, `close_or_remove`) — under lock |
-| `get-zoom` / `getZoom()` | `hc_zoom`, bound **$ModCtrl-f** | the three-state press machine: tiled -> float (flag reset + center + deco-flush frame fill + fit) / floating -> maximize onto `<tag>-max` / maximized -> restore. The `-max` check runs BEFORE the floating check; PF_MAX state is owned by the delegated `hc_maximize`/`hc_unmaximize` helpers (and their daemon) |
-| `get-extracted` / `getExtracted()` | `hc_floatx`, `$Mod-x` | the layer-yank machine: focus-a-float-then-unfloat / yank (float + center into the float session, frame left alone) / defer / un-float-into-empty-frame / tidying (remove, reveal, `polyframes hidden`, `use_previous`) |
-| `get-focus` / `getFocus()` | `hc_focus`, `$Mod-f` | the float-register machine: try focusing a float (un-float it into an EMPTY focused frame; with children the float stays, no stacking) / no floats + max layout -> the size-keeping lift (`hc_center frame` + vacated-frame `remove` + `hc_fit_to frame`, then the `algorithm=max` tail) / a focused float -> DIRECT un-float (no hc_tile). No script-level lock |
-
-The old `mod-s`, `mod-w`, `mod-d`, `mod-e`, `mod-a`, `mod-shift-b`,
-`mod-q`, `mod-f`, `mod-x` CLI names remain as deprecated aliases (same
-behavior, a note on stderr) until the dots keybinds are re-pointed.
-
-Small imperatives (also importable, shared with polyframes):
-
-- `unfloatWid(wid)` — fold fullscreen/pseudotile/floating flags off a
-  float and `jumpto` it (hc_floatx's `unfloat_wid`).
-- `floatCenterFrame(wid)` — float a window and center it within the
-  focused frame's content geometry, under a lock (the scroll wheel's
-  float step).
-- `minimizeKeepFrame(wid)` — minimize while deliberately keeping the
-  frame (the scroll wheel's tiled step down).
-- `removeEmptyFrame()` — prune the focused frame when the tag has more
-  than one frame and the focused one holds zero clients.
+`parseAttr` is importable for tooling that wants hlwm-typed values
+without spawning the CLI:
 
 ```ts
 import { parseAttr } from "herbstutil/src/commands/parse.js";
-import { getSouth, getFocus, unfloatWid, floatCenterFrame } from "herbstutil/src/commands/nav.js";
+
+const tree = parseAttr(await Bun.spawn(["herbstclient", "attr", "clients.focus."]).stdout.text());
 ```
 
-The state machines delegate to the dots helper binaries exactly where
-the scripts do — `hc_center`, `hc_resize`, `hc_fit_to`, `hc_tile`,
-`hc_maximize`, `hc_unmaximize` and `polyframes` — resolved from
-`$HOME/.local/bin` by default. Override the directory (tests point it
-at a fixture dir) with:
-
-```bash
-HERBSTUTIL_HELPER_DIR=/path/to/bin herbstutil get-extracted
-```
-
-Every subcommand/function is verified against the recorded argv of a
-mocked `herbstclient` binary (`bun test`) — nothing here needs a live
-WM to test.
+`bun test` covers the parser and the `attr` runner against recorded
+`herbstclient` output — nothing here needs a live WM to test.
