@@ -1,6 +1,6 @@
 {
   "name": "herbstutil",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A simple filter to print herbstclient attr output in machine-readable format.",
   "author": "Kirill <kine> Nevzorov",
   "email": "akinevz@outlook.com",
