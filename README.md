@@ -1,5 +1,9 @@
 # herbstutil
 
+[![CI](https://img.shields.io/github/actions/workflow/status/akinevz2/herbstutil/ci.yml?branch=main&label=CI&style=flat&pretty=deferred)](https://github.com/akinevz2/herbstutil/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/herbstutil)](https://www.npmjs.com/package/herbstutil)
+[![License](https://img.shields.io/github/license/akinevz2/herbstutil)](LICENSE)
+
 Post-process `herbstclient attr` output into json.
 
 Project page: [akinevz.com/herbstutil](https://akinevz.com/herbstutil)
