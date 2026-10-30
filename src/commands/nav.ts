@@ -36,8 +36,10 @@ function spawnEnv(): Record<string, string> {
 
 /**
  * Run `herbstclient <args...>`. Resolves { stdout } on exit 0, null on
- * ANY failure (missing object / unreachable WM) — the fail-soft
- * contract; callers branch on null instead of catching.
+ * ANY failure (missing object / unreachable WM / 5s timeout) — the
+ * fail-soft contract; callers branch on null instead of catching.
+ * The 5-second timeout is the dots wrapper convention (a hung WM may
+ * never wedge the bar or the keybind).
  */
 async function hc(...args: string[]): Promise<{ stdout: string } | null> {
     try {
@@ -45,6 +47,7 @@ async function hc(...args: string[]): Promise<{ stdout: string } | null> {
             stdout: "pipe",
             stderr: "pipe",
             env: spawnEnv(),
+            timeout: 5000,
         });
         const stdout = await new Response(proc.stdout).text();
         const code = await proc.exited;
@@ -65,6 +68,7 @@ async function helper(name: string, args: string[] = []): Promise<boolean> {
             stdout: "ignore",
             stderr: "ignore",
             env: spawnEnv(),
+            timeout: 5000,
         });
         return (await proc.exited) === 0;
     } catch {
