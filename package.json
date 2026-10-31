@@ -7,7 +7,7 @@
   "license": "GPL-2.0-only",
   "homepage": "https://github.com/akinevz2/herbstutil",
   "bin": {
-    "herbstutil": "./dist/index"
+    "herbstutil": "src/index.ts"
   },
   "files": [
     "src/",
@@ -34,7 +34,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/akinevz2/herbstutil.git"
+    "url": "git+https://github.com/akinevz2/herbstutil.git"
   },
   "bugs": {
     "url": "https://github.com/akinevz2/herbstutil/issues"
