@@ -4,7 +4,7 @@
   "description": "A simple filter to print herbstclient attr output in machine-readable format.",
   "author": "Kirill <kine> Nevzorov",
   "email": "akinevz@outlook.com",
-  "license": "GPL-2.0-only",
+  "license": "GPL-2.0-or-later",
   "homepage": "https://github.com/akinevz2/herbstutil",
   "bin": {
     "herbstutil": "src/index.ts"
