@@ -1,7 +1,7 @@
-// complete-shell — the completion verb, mirroring herbstclient's
+// shell-completions — the completion verb, mirroring herbstclient's
 // complete_shell (hlwm's completion.cpp + share/herbstclient-completion.bash):
 //
-//   herbstutil complete-shell <position> <words...>
+//   herbstutil shell-completions <position> <words...>
 //
 // <position> indexes the word being completed within <words...>
 // (0 = the first word after the binary name). The verb prints the
@@ -18,7 +18,7 @@
 
 // the static completion tree (hlwm keeps its own in completion.cpp —
 // same idea: the program knows its own grammar)
-const VERBS = ["attr", "parse", "complete-shell", "help", "version"] as const;
+const VERBS = ["attr", "parse", "shell-completions", "help", "version"] as const;
 
 // per-verb flags: [long, short, takesValue]
 const FLAGS: Record<string, [string, string, boolean][]> = {
@@ -32,7 +32,7 @@ const FLAGS: Record<string, [string, string, boolean][]> = {
         ["--escape", "-e", false],
         ["--help", "-h", false],
     ],
-    "complete-shell": [["--help", "-h", false]],
+    "shell-completions": [["--help", "-h", false]],
     help: [],
     version: [],
 };
@@ -110,8 +110,8 @@ export async function complete(
 }
 
 export default {
-    name: "complete-shell",
-    description: "Shell-completion candidates (mirrors herbstclient complete_shell)",
+    name: "shell-completions",
+    description: "Print shell-completions",
     handler: async ({ positional }: { positional: string[] }) => {
         const pos = Number.parseInt(positional[0] ?? "0", 10);
         const words = positional.slice(1);

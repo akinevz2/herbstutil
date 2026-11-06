@@ -1,20 +1,20 @@
-// tests/complete.test.ts — the complete-shell verb's candidate logic.
+// tests/complete.test.ts — the shell-completions verb's candidate logic.
 // The attr positional's LIVE completion is delegated to herbstclient
 // complete_shell; the runner is injected so tests never touch a WM.
 
 import { describe, expect, test } from "bun:test";
 
-import { complete } from "../src/commands/complete-shell.js";
+import { complete } from "../src/commands/shell-completions.js";
 
 const fakeRun = (lines: string[]) => async (args: string[]) => {
     // record-keeping via closure inspection in the assertions below
     return lines;
 };
 
-describe("complete-shell", () => {
+describe("shell-completions", () => {
     test("verb slot: all verbs, filtered by prefix", async () => {
         expect(await complete(0, [""])).toEqual(
-            ["attr", "complete-shell", "help", "parse", "version"],
+            ["attr", "help", "parse", "shell-completions", "version"],
         );
         expect(await complete(0, ["a"])).toEqual(["attr"]);
         expect(await complete(0, ["par"])).toEqual(["parse"]);
