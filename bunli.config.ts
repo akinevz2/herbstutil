@@ -1,9 +1,8 @@
 import { defineConfig } from "@bunli/core";
+import pkg from "./package.json" with { type: "json" };
 
 export default defineConfig({
-  name: "herbstutil",
-  version: "0.2.0",
-  description: "A simple filter to parse herbstclient attr output into json",
+  ...pkg,
 
   commands: {
     directory: "./src/commands",
