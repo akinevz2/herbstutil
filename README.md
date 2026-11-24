@@ -5,7 +5,7 @@ format — the pure parse/attr compatibility layer for
 [herbstluftwm](https://herbstluftwm.github.io/).
 
 [![npm](https://img.shields.io/npm/v/herbstutil)](https://www.npmjs.com/package/herbstutil)
-[![CI](https://img.shields.io/github/actions/workflow/akinevz2/herbstutil/ci.yml?branch=main)](https://github.com/akinevz2/herbstutil/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/akinevz2/herbstutil/ci.yml?branch=main)](https://github.com/akinevz2/herbstutil/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Project page: [akinevz.com/herbstutil](https://akinevz.com/herbstutil)
