@@ -104,7 +104,7 @@ a managed window
  b w h decorated = true
  i - h pid = 403112
  s - - tag = "work"
- s - h title = "OC | herbstutil tag 0.1.1b discrepancy"
+ s - h title = "OpenCode"
  b - h visible = true
  s - h winid = "0x280003"
 ```
