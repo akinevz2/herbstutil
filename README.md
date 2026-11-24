@@ -39,6 +39,112 @@ hints become `{x, y, width, height}` objects, point (`p`) hints become
 `{x, y}` objects. `--escape` keeps every value as the literal string
 herbstclient printed.
 
+The project page on akinevz.com carries the rendered architecture
+diagrams and is generated from this repo's `docs/architecture.md` by
+the depot's documentation system (`system/docs/sync-website.mjs`) —
+this README is the source for the usage examples; the website page is
+curated and never regenerated wholesale.
+
+## Examples
+
+The same nodes, before and after herbstutil.
+
+### root node: `herbstclient attr clients.`
+
+raw:
+
+```text
+$ herbstclient attr clients.
+The managed windows. One entry per window id.
+
+4 children:
+  0x280003.
+  0x680004.
+  0x900003.
+  focus.
+0 attributes.
+ .---- type
+ | .-- writable
+ | | .-- hookable
+ V V V
+```
+
+through herbstutil:
+
+```json
+{
+    "value": "The managed windows. One entry per window id.",
+    "children": [
+        "0x280003.",
+        "0x680004.",
+        "0x900003.",
+        "focus."
+    ],
+    "attributes": {}
+}
+```
+
+### node with attributes: `herbstclient attr clients.focus.`
+
+raw (excerpt):
+
+```text
+$ herbstclient attr clients.focus.
+a managed window
+
+1 child:
+  parent_frame.
+24 attributes:
+ .---- type
+ | .-- writable
+ | | .-- hookable
+ V V V
+ s - - class = "Alacritty"
+ R - h content_geometry = 1255x662+13+34
+ b w h decorated = true
+ i - h pid = 403112
+ s - - tag = "work"
+ s - h title = "OC | herbstutil tag 0.1.1b discrepancy"
+ b - h visible = true
+ s - h winid = "0x280003"
+```
+
+through herbstutil (excerpt — all 24 attributes arrive in the JSON):
+
+```json
+{
+    "value": "a managed window",
+    "children": [
+        "parent_frame."
+    ],
+    "attributes": {
+        "class": "Alacritty",
+        "content_geometry": { "x": 13, "y": 34, "width": 1255, "height": 662 },
+        "decorated": true,
+        "pid": 403112,
+        "tag": "work",
+        "title": "OC | herbstutil tag 0.1.1b discrepancy",
+        "visible": true,
+        "winid": "0x280003"
+    }
+}
+```
+
+### leaf node: `herbstclient attr clients.focus.tag`
+
+raw:
+
+```text
+$ herbstclient attr clients.focus.tag
+work
+```
+
+through herbstutil:
+
+```json
+"work"
+```
+
 ## Library
 
 `parseAttr` is importable for tooling that wants hlwm-typed values
